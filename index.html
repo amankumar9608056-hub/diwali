@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy Diwali Fireworks</title>
+    <style>
+        :root {
+            --primary-bg: #000;
+            --primary-color: #fff;
+            --highlight-color: #ff9800;
+        }
+
+        body {
+            background-color: var(--primary-bg);
+            color: var(--primary-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        /* --- Main App Containers --- */
+        .container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .stage-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 1;
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        .stage-container.remove {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        #trails-canvas {
+            z-index: 1;
+        }
+
+        #main-canvas {
+            z-index: 2;
+        }
+
+        /* --- Loading Screen --- */
+        .loading-init {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 100;
+        }
+
+        .loading-init__header {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: var(--highlight-color);
+            text-shadow: 0 0 10px var(--highlight-color);
+        }
+
+        .loading-init__status {
+            margin-top: 1em;
+            font-size: 1.2em;
+            opacity: 0.8;
+        }
+
+        /* --- Wishes Overlay --- */
+        .wishes-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 3;
+            pointer-events: none;
+            text-align: center;
+        }
+
+        .wish-text {
+            color: var(--highlight-color);
+            font-family: 'Arial Black', Gadget, sans-serif;
+            text-shadow: 0 0 15px rgba(255, 152, 0, 0.8), 0 0 25px rgba(255, 152, 0, 0.6);
+            animation: pulse 2s infinite alternate;
+            padding: 10px;
+        }
+
+        .shubh-labh {
+            font-size: 3.5em;
+            font-weight: 900;
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+        }
+
+        .happy-diwali {
+            font-size: 5.5em;
+            font-weight: 900;
+            letter-spacing: 3px;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 0.9;
+            }
+            100% {
+                transform: scale(1.05);
+                opacity: 1;
+            }
+        }
+        
+        /* --- Diya Styles and Animations --- */
+        .diwali-greeting-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .diya {
+            width: 60px;
+            height: 30px;
+            background-color: #D4AF37; /* Gold color */
+            border: 2px solid #FF8C00;
+            border-radius: 0 0 40px 40px; /* Base shape */
+            position: relative;
+            margin: 0 25px;
+        }
+
+        /* Flame of the Diya */
+        .diya::before {
+            content: '';
+            position: absolute;
+            top: -22px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 18px;
+            height: 30px;
+            background-color: #FFD700;
+            border-radius: 50% 50% 15% 15%;
+            box-shadow: 0 0 15px rgba(255, 140, 0, 0.8), 0 0 25px rgba(255, 69, 0, 0.7);
+            animation: flame-flicker 1.5s ease-in-out infinite alternate;
+        }
+
+        .diya-left {
+            opacity: 0; /* Start hidden */
+            animation: slide-in-left 1.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.5s forwards;
+        }
+        
+        .diya-right {
+            opacity: 0; /* Start hidden */
+            animation: slide-in-right 1.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.5s forwards;
+        }
+
+        @keyframes flame-flicker {
+            0% { transform: translateX(-50%) scaleY(1) rotate(-1deg); }
+            50% { transform: translateX(-50%) scaleY(0.95) rotate(1deg); opacity: 0.9; }
+            100% { transform: translateX(-50%) scaleY(1.02) rotate(-1deg); }
+        }
+
+        @keyframes slide-in-left {
+            from { transform: translateX(-250px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes slide-in-right {
+            from { transform: translateX(250px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* --- Controls --- */
+        .controls {
+            position: absolute;
+            top: 0;
+            right: 0;
+            padding: 1rem;
+            display: flex;
+            gap: 0.5rem;
+            z-index: 4;
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        .btn {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn:hover {
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .btn svg {
+            width: 24px;
+            height: 24px;
+            fill: var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+
+    <div style="height: 0; width: 0; position: absolute; visibility: hidden;">
+        <svg xmlns="http://www.w3.org/2000/svg">
+            <symbol id="icon-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></symbol>
+            <symbol id="icon-pause" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></symbol>
+            <symbol id="icon-sound-on" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></symbol>
+            <symbol id="icon-sound-off" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></symbol>
+        </svg>
+    </div>
+
+    <div class="container">
+        <div class="loading-init">
+            <div class="loading-init__header">Happy Diwali</div>
+            <div class="loading-init__status">Loading...</div>
+        </div>
+        <div class="stage-container remove">
+            <div class="canvas-container">
+                <canvas id="trails-canvas"></canvas>
+                <canvas id="main-canvas"></canvas>
+            </div>
+            
+            <div class="wishes-overlay">
+                <div class="wish-text shubh-labh">शुभ लाभ</div>
+                <div class="diwali-greeting-container">
+                    <div class="diya diya-left"></div>
+                    <div class="wish-text happy-diwali">Happy Diwali</div>
+                    <div class="diya diya-right"></div>
+                </div>
+            </div>
+            
+            <div class="controls">
+                <div class="btn pause-btn"><svg><use href="#icon-pause"></use></svg></div>
+                <div class="btn sound-btn"><svg><use href="#icon-sound-off"></use></svg></div>
+            </div>
+        </div>
+    </div>
+
+    <audio id="diwali-audio" loop>
+        <source src="diwali.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const PI = Math.PI;
+    const TAU = PI * 2;
+    
+    const rand = (min, max) => Math.random() * (max - min) + min;
+    const HSL = (h, s, l) => `hsl(${h}, ${s}%, ${l}%)`;
+    const HSLA = (h, s, l, a) => `hsla(${h}, ${s}%, ${l}%, ${a})`;
+
+    const state = {
+        paused: false,
+        soundEnabled: false,
+        // Default config, no longer changeable by UI
+        config: {
+            shell: 'random',
+            size: 'random',
+            quality: 'high',
+            skyLighting: 'norm',
+            autoLaunch: true,
+            finaleMode: false,
+            longExposure: false,
+        }
+    };
+
+    const a = {
+        loadingScreen: document.querySelector('.loading-init'),
+        stageContainer: document.querySelector('.stage-container'),
+        mainCanvas: document.getElementById('main-canvas'),
+        trailsCanvas: document.getElementById('trails-canvas'),
+        controls: document.querySelector('.controls'),
+        pauseBtn: document.querySelector('.pause-btn'),
+        soundBtn: document.querySelector('.sound-btn'),
+        audio: document.getElementById('diwali-audio'),
+    };
+
+    const ctx = a.mainCanvas.getContext('2d');
+    const trailsCtx = a.trailsCanvas.getContext('2d');
+    
+    let fireworks = [];
+    let sparks = [];
+    let pointer = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+
+    const shellTypes = ['basic', 'crackling', 'strobe', 'glitter', 'willow', 'ring'];
+    const shellSizes = ['small', 'medium', 'large'];
+
+    // SETUP
+    function setup() {
+        resize();
+        bindEvents();
+        a.loadingScreen.remove();
+        a.stageContainer.classList.remove('remove');
+        animationLoop();
+    }
+
+    // EVENT BINDING
+    function bindEvents() {
+        window.addEventListener('resize', resize);
+        
+        document.addEventListener('pointermove', e => {
+            pointer.x = e.clientX;
+            pointer.y = e.clientY;
+        });
+
+        document.addEventListener('pointerdown', e => {
+            launchFirework(e.clientX, e.clientY);
+            if (state.soundEnabled && a.audio.paused) {
+                a.audio.play().catch(e => console.error("Audio could not be played:", e));
+            }
+        });
+        
+        a.pauseBtn.addEventListener('click', togglePause);
+        a.soundBtn.addEventListener('click', toggleSound);
+    }
+    
+    // MAIN ANIMATION LOOP
+    let lastTime = 0;
+    let autoLaunchTime = 0;
+    
+    function animationLoop(time = 0) {
+        if (!state.paused) {
+            const dt = time - lastTime;
+            lastTime = time;
+            
+            if (state.config.autoLaunch) {
+                autoLaunchTime += dt;
+                const launchInterval = state.config.finaleMode ? 100 : 800;
+                if (autoLaunchTime > launchInterval) {
+                    autoLaunchTime = 0;
+                    launchFirework();
+                }
+            }
+
+            if (!state.config.longExposure) {
+                trailsCtx.clearRect(0, 0, trailsCtx.canvas.width, trailsCtx.canvas.height);
+            } else {
+                trailsCtx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+                trailsCtx.fillRect(0, 0, trailsCtx.canvas.width, trailsCtx.canvas.height);
+            }
+            ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+            if (state.config.skyLighting !== 'off') {
+                const intensity = sparks.reduce((acc, spark) => acc + spark.alpha, 0) / sparks.length || 0;
+                const lighting = state.config.skyLighting === 'heavy' ? intensity * 0.4 : intensity * 0.2;
+                a.mainCanvas.style.background = `radial-gradient(circle at ${pointer.x}px ${pointer.y}px, rgba(200, 200, 255, ${lighting}) 0%, rgba(0, 0, 0, 0) 60%)`;
+            } else {
+                a.mainCanvas.style.background = 'transparent';
+            }
+
+            fireworks = fireworks.filter(fw => {
+                fw.update(dt);
+                fw.render();
+                return !fw.isDead;
+            });
+            
+            sparks = sparks.filter(sp => {
+                sp.update(dt);
+                sp.render();
+                return !sp.isDead;
+            });
+        }
+        requestAnimationFrame(animationLoop);
+    }
+
+    // FIREWORK CLASS
+    class Firework {
+        constructor(x, y, targetX, targetY) {
+            this.x = x;
+            this.y = y;
+            this.targetX = targetX;
+            this.targetY = targetY;
+            this.isDead = false;
+            this.hue = rand(0, 360);
+            const angle = Math.atan2(targetY - y, targetX - x);
+            const distance = Math.sqrt((targetX - x) ** 2 + (targetY - y) ** 2);
+            const speed = distance / 50;
+            this.vx = Math.cos(angle) * speed;
+            this.vy = Math.sin(angle) * speed;
+            this.trail = [];
+        }
+
+        update(dt) {
+            this.x += this.vx * (dt / 16.67);
+            this.y += this.vy * (dt / 16.67);
+            this.vy += 0.02; // gravity
+            this.trail.push({ x: this.x, y: this.y });
+            if (this.trail.length > 5) this.trail.shift();
+            if (this.y <= this.targetY) { 
+                this.explode();
+                this.isDead = true;
+            }
+        }
+        
+        render() {
+            ctx.beginPath();
+            ctx.moveTo(this.trail[0]?.x || this.x, this.trail[0]?.y || this.y);
+            ctx.lineTo(this.x, this.y);
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = HSL(this.hue, 100, 70);
+            ctx.stroke();
+        }
+
+        explode() {
+            const shell = state.config.shell === 'random' ? shellTypes[Math.floor(rand(0, shellTypes.length))] : state.config.shell;
+            const size = state.config.size === 'random' ? shellSizes[Math.floor(rand(0, shellSizes.length))] : state.config.size;
+            let sparkCount;
+            switch(size) {
+                case 'small': sparkCount = 80; break;
+                case 'large': sparkCount = 300; break;
+                default: sparkCount = 150; break;
+            }
+            const qualityMultiplier = { low: 0.5, medium: 1, high: 1.5 }[state.config.quality] || 1;
+            sparkCount *= qualityMultiplier;
+            const baseHue = this.hue;
+            for (let i = 0; i < sparkCount; i++) {
+                sparks.push(new Spark(this.x, this.y, baseHue, shell));
+            }
+        }
+    }
+
+    // SPARK CLASS
+    class Spark {
+        constructor(x, y, hue, type) {
+            this.x = x;
+            this.y = y;
+            this.type = type;
+            this.isDead = false;
+            this.life = rand(0.5, 1.5);
+            this.initialLife = this.life;
+            this.alpha = 1;
+            const speed = rand(1, 5) * (type === 'willow' ? 0.7 : 1);
+            let angle;
+            if (type === 'ring') {
+                angle = rand(0, TAU);
+                this.vx = Math.cos(angle) * speed * 0.8;
+                this.vy = Math.sin(angle) * speed * 0.8;
+                this.life *= 1.2;
+            } else {
+                angle = rand(0, TAU);
+                this.vx = Math.cos(angle) * speed;
+                this.vy = Math.sin(angle) * speed;
+            }
+            this.hue = hue + rand(-20, 20);
+            this.strobe = type === 'strobe' && Math.random() < 0.2;
+        }
+
+        update(dt) {
+            this.life -= dt / 1000;
+            if (this.life <= 0) {
+                this.isDead = true;
+                return;
+            }
+            this.x += this.vx * (dt / 16.67);
+            this.y += this.vy * (dt / 16.67);
+            this.vy += this.type === 'willow' ? 0.01 : 0.02;
+            this.alpha = this.life / this.initialLife;
+            if (this.type === 'crackling' && Math.random() < 0.05) {
+                for (let i = 0; i < 2; i++) {
+                    sparks.push(new Spark(this.x, this.y, this.hue + rand(-30, 30), 'basic'));
+                }
+                this.isDead = true;
+            }
+        }
+
+        render() {
+            const targetCtx = state.config.longExposure ? trailsCtx : ctx;
+            targetCtx.beginPath();
+            targetCtx.arc(this.x, this.y, 2, 0, TAU);
+            if (this.strobe) {
+                targetCtx.fillStyle = Math.random() < 0.5 ? '#fff' : HSLA(this.hue, 100, 80, this.alpha);
+            } else {
+                 targetCtx.fillStyle = HSLA(this.hue, 100, 50 + (this.alpha * 50), this.alpha);
+            }
+            if (this.type === 'glitter') {
+                 targetCtx.globalCompositeOperation = 'lighter';
+                 targetCtx.fillStyle = `rgba(255, 255, 255, ${Math.min(1, this.alpha * 2)})`;
+            }
+            targetCtx.fill();
+            targetCtx.globalCompositeOperation = 'source-over';
+        }
+    }
+
+    // ACTIONS
+    function launchFirework(x, y) {
+        const startX = window.innerWidth / 2;
+        const startY = window.innerHeight;
+        const targetX = x || rand(window.innerWidth * 0.2, window.innerWidth * 0.8);
+        const targetY = y || rand(window.innerHeight * 0.2, window.innerHeight * 0.6);
+        fireworks.push(new Firework(startX, startY, targetX, targetY));
+    }
+    
+    function togglePause() {
+        state.paused = !state.paused;
+        const icon = state.paused ? '#icon-play' : '#icon-pause';
+        a.pauseBtn.querySelector('use').setAttribute('href', icon);
+        if (state.paused) {
+            a.audio.pause();
+        } else if (state.soundEnabled) {
+            a.audio.play();
+        }
+    }
+    
+    function toggleSound() {
+        state.soundEnabled = !state.soundEnabled;
+        const icon = state.soundEnabled ? '#icon-sound-on' : '#icon-sound-off';
+        a.soundBtn.querySelector('use').setAttribute('href', icon);
+        if (state.soundEnabled) {
+            a.audio.play();
+        } else {
+            a.audio.pause();
+        }
+    }
+
+    function resize() {
+        const { innerWidth: w, innerHeight: h } = window;
+        a.mainCanvas.width = a.trailsCanvas.width = w;
+        a.mainCanvas.height = a.trailsCanvas.height = h;
+    }
+
+    // Start the app
+    setup();
+});
+</script>
+
+</body>
+</html>
